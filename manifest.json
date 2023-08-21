@@ -1,0 +1,51 @@
+{
+  "name": "Wp operator tool",
+  "version": "0.1.0",
+  "description": "Operate with the casino admin from the whatsapp web page",
+  "permissions": [
+    "storage",
+    "tabs",
+    "clipboardWrite",
+    "clipboardRead",
+    "webRequest",
+    "http://localhost:5252/"
+  ],
+  "host_permissions": ["https://*.whatsapp.com/*"],
+  "background": {
+    "service_worker": "src/background/index.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*.whatsapp.com/*"],
+      "js": [
+        "src/content/operator/OperatorUtils.js",
+        "src/content/operator/Operator.js",
+        "src/content/index.js"
+      ],
+      "css": ["src/content/styles.css"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "assets/add_coins.png",
+        "assets/remove_coins.png",
+        "assets/control_panel.png"
+      ],
+      "matches": ["https://*.whatsapp.com/*"]
+    }
+  ],
+  "action": {
+    "default_icon": {
+      "16": "assets/add_coins.png",
+      "24": "assets/add_coins.png",
+      "32": "assets/add_coins.png"
+    },
+    "default_title": "Operator tools",
+    "default_popup": "src/popup/popup.html"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' http://localhost:3000; object-src 'self';"
+  },
+  "manifest_version": 3
+}

@@ -1,0 +1,360 @@
+/* OPTIONS SELECTOR */
+.custom-menu-item li:hover {
+  background-color: #1f222c;
+}
+
+/* MODAL */
+.modal-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.modal-content {
+  background-color: #121212; /* Dark background */
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid #616161;
+  min-width: 400px;
+  max-width: 900px;
+  box-sizing: border-box;
+  position: relative;
+  font-family: Arial, sans-serif;
+  transition: transform 0.3s ease; /* Smooth transition for hover effect */
+}
+
+.modal-title {
+  font-size: 1.5em;
+  font-weight: bold;
+  color: #ececec; /* Light text for dark mode */
+  margin-bottom: 10px;
+  text-align: left; /* Align to the left */
+}
+
+.modal-container .modal-description {
+  font-size: 1em;
+  color: #b0b0b0; /* Slightly dimmed text for descriptions */
+  margin-bottom: 20px; /* Spacing between description and the inputs */
+  text-align: left; /* Align to the left */
+}
+
+.modal-container .input-container {
+  width: 100%;
+  margin: 10px 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-container .input-title {
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: #ececec; /* Light text for dark mode */
+}
+
+.modal-container .required {
+  color: #d32f2f; /* Red color for the asterisk */
+}
+
+.modal-container .input-description {
+  margin-bottom: 10px;
+  color: #b0b0b0; /* Slightly dimmed text for descriptions */
+  font-size: 0.9em;
+}
+
+.modal-container input {
+  padding: 10px;
+  background-color: #2c2c2c; /* Darker input background */
+  border: 1px solid #3a3a3a; /* Border for input */
+  color: #ececec; /* Light text for input */
+  border-radius: 5px;
+  font-size: 1em;
+  transition: border-color 0.3s ease;
+}
+
+.modal-container input:focus {
+  border-color: #34b7f1;
+  outline: none;
+}
+
+.modal-container .error-message {
+  color: #ff8a80; /* Reddish error color */
+  margin-top: 10px;
+  font-size: 0.9em;
+}
+
+.modal-container .close-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: #3a3a3a; /* Darker button background */
+  color: #ececec; /* Light text for button */
+  border: none;
+  cursor: pointer;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s ease;
+}
+
+.modal-container .close-button:hover {
+  background-color: #ff8a80; /* Reddish hover color */
+  color: #121212; /* Dark text on hover */
+}
+
+.modal-container .modal-button {
+  margin: 5px;
+  padding: 10px 20px;
+  border: none;
+  cursor: pointer;
+  color: #ffffff; /* White text for better visibility */
+  border: 1px solid #616161;
+  border-radius: 5px;
+  font-weight: bold; /* Bold text for better legibility */
+  transition: all 0.3s;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Shadow for depth */
+}
+
+.modal-container .modal-button:hover {
+  border: 1px solid #bebebe;
+}
+
+.modal-container .buttons-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+/* Style for disabled inputs */
+.modal-container input:disabled {
+  background-color: #3a3a3a; /* Slightly darker background */
+  color: #888888; /* Dimmed text color */
+  cursor: not-allowed; /* Indicate non-interactivity */
+}
+
+/* Style for disabled buttons */
+.modal-container button:disabled {
+  background-color: #888888; /* Dimmed background color */
+  cursor: not-allowed; /* Indicate non-interactivity */
+}
+/* Checkbox Container */
+.modal-container .checkbox-container {
+  margin: 40px 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  position: relative;
+}
+
+/* Checkbox Label */
+.modal-container .checkbox-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 18px; /* Adjusted font size */
+  color: #fff; /* White color for better visibility on dark background */
+  user-select: none; /* Prevent text from being selected on click */
+  position: relative; /* Relative positioning for custom checkbox */
+  flex: 1;
+}
+
+/* Checkbox Input */
+.modal-container .checkbox-label input[type="checkbox"] {
+  margin-right: 12px; /* Increased margin */
+  vertical-align: middle;
+}
+
+/* Checkbox Title */
+.modal-container .checkbox-label span {
+  flex: 1;
+}
+
+/* Checkbox Description */
+.modal-container .checkbox-description {
+  font-size: 16px; /* Adjusted font size */
+  color: #ddd; /* Adjusted color for better visibility on dark background */
+  position: absolute;
+  bottom: -20px; /* Position the description below the checkbox */
+  left: 0px; /* Align with the checkbox title */
+  margin-left: 25px;
+}
+
+/* Checkbox Description */
+.modal-container .checkbox-description {
+  font-size: 16px; /* Adjusted font size */
+  color: #ddd; /* Adjusted color for better visibility on dark background */
+  margin-top: 4px;
+}
+
+/* NOTIFICATION */
+.notification-container {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+  padding-top: 60px;
+}
+
+.notification {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 14px 18px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: opacity 0.3s, transform 0.3s;
+  transform: translateY(0);
+  opacity: 1;
+  width: auto;
+  max-width: 280px;
+  /* background opacity */
+  backdrop-filter: blur(5px); /* Apply blur effect */
+}
+
+.notification .notification-title {
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 6px;
+}
+
+.notification .notification-description {
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.notification .notification-close {
+  cursor: pointer;
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background-color: rgba(0, 0, 0, 0.2);
+  color: #ffffff;
+  border-radius: 50%;
+  padding: 5px;
+  font-size: 14px;
+  line-height: 1;
+  transition: background-color 0.2s;
+  font-weight: 700;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notification .notification-close:hover {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+.notification .notification-close:before {
+  content: "×"; /* Using a multiplication symbol for a cleaner look */
+}
+
+.notification-exit {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.buttons-container {
+  display: flex;
+  justify-content: flex-start;
+  gap: 10px; /* Spacing between buttons */
+  margin-top: 10px;
+}
+.notification .buttons-container button {
+  padding: 7px 17px;
+  border: none;
+  border-radius: 20px; /* Rounded corners similar to WhatsApp */
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 500; /* Slightly bold for better legibility */
+  transition: background-color 0.2s, color 0.2s, transform 0.2s; /* Added transform for a subtle press effect */
+  background-color: rgba(255, 255, 255, 0.9);
+  color: "black";
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+}
+
+.notification .buttons-container button:hover {
+  background-color: rgba(72, 72, 72, 0.9);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.notification .buttons-container button:active {
+  transform: scale(0.95); /* Subtle press effect */
+}
+
+.notification .buttons-container button:disabled,
+.notification .notification-close:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* BLACK OVERLAY */
+.custom-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9999;
+  background-color: rgba(0, 0, 0, 0.85);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+.custom-overlay .overlay-title {
+  color: white;
+  margin-bottom: 10px;
+  font-size: 24px;
+}
+
+.custom-overlay .overlay-description {
+  color: white;
+  text-align: center;
+  font-size: 18px;
+  max-width: 80%;
+  margin-bottom: 20px;
+}
+
+/* LOADING SPINNER */
+.spinner {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top: 3px solid #cacaca; /* WhatsApp color */
+  animation: spin 1s linear infinite;
+  margin-left: 10px;
+}
+.big-spinner {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top: 3px solid #cacaca; /* WhatsApp color */
+  animation: spin 1s linear infinite;
+  margin-left: 10px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

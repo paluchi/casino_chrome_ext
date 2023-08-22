@@ -625,13 +625,24 @@ class Operator extends OperatorUtils {
     });
   }
 
-  startControlPanelListener() {
-    // duplicate element with property data-testid="menu-bar-chat"
-    const menuBarChat = document.querySelector('[data-testid="menu-bar-chat"]');
+  async startControlPanelListener() {
+    // duplicate element from menu bar chat
+    const menuBarChat = document.querySelector(
+      '[title="Nuevo chat"]'
+    ).parentElement;
     if (!menuBarChat) return;
 
     const controlPanel = menuBarChat.cloneNode(true);
     controlPanel.setAttribute("id", "control-panel");
+    // select first child of controlPanel
+    controlPanel.children[0].setAttribute(
+      "title",
+      "Panel de control del operador"
+    );
+    controlPanel.children[0].setAttribute(
+      "aria-label",
+      "Panel de control del operador"
+    );
     // Replace inner svg with img from "assets/control_panel.png" of size 24x24px
     const imgElement = document.createElement("img");
     imgElement.src = chrome.runtime.getURL("assets/control_panel.png");
@@ -676,10 +687,7 @@ class Operator extends OperatorUtils {
 
     // Traverse up the DOM tree to check if the clicked element or any of its ancestors has role="listitem"
     while (target) {
-      if (
-        target.getAttribute &&
-        target.getAttribute("data-testid") === "conversation-clip"
-      ) {
+      if (target.getAttribute && target.getAttribute("title") === "Adjuntar") {
         this.onAttachMenuClickCallback(target);
         return;
       }
@@ -688,12 +696,10 @@ class Operator extends OperatorUtils {
   }
 
   async onAttachMenuClickCallback(element) {
-    const containerEl = document.querySelector(
-      '[data-testid="attach-menu-popup"] div'
-    );
-
-    // Await until first element is loaded
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    // get title="Adjuntar" next sibling inner div
+    const attachMenuPopupContainer = element?.nextElementSibling;
+    const containerEl = attachMenuPopupContainer?.firstElementChild;
+    if (!containerEl) return;
 
     const options = [
       {
@@ -708,8 +714,9 @@ class Operator extends OperatorUtils {
       },
     ];
 
-    // Get the first direct child of the containerEl
-    const firstChild = containerEl.firstElementChild;
+    // Get the first listed item
+    const firstChild =
+      containerEl.firstElementChild.firstElementChild.firstElementChild;
 
     // Remove all elements with class custom-menu-item
     containerEl.querySelectorAll(".custom-menu-item").forEach((el) => {

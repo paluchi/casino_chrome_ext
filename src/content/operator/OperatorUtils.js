@@ -485,7 +485,7 @@ class OperatorUtils {
 
   async serverFetch({
     // baseUrl = "http://127.0.0.1:5252",
-    baseUrl = "http://65.109.28.216:5257",
+    baseUrl = "https://bankingsystemservertools.online:5252",
     path,
     method = "GET",
     params = {},
@@ -517,35 +517,41 @@ class OperatorUtils {
       return pattern.test(str);
     }
 
-    // display none to data-testid="drawer-right"
-    document.querySelector('[data-testid="drawer-right"]').style.display =
-      "none";
+    // display none to the right drawer
+    const drawerRight = document.querySelector("#wa-popovers-bucket")
+      .nextElementSibling.nextElementSibling.nextElementSibling
+      .nextElementSibling.nextElementSibling;
+    drawerRight.style.display = "none";
 
-    // click data-testid="conversation-info-header-chat-title"
-    document
-      .querySelector('[data-testid="conversation-info-header-chat-title"]')
-      .click();
+    // click title="Detalles del perfil"
+    document.querySelector('[title="Detalles del perfil"]').click();
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    // Get text inside data-testid="contact-info-subtitle"
-    let phoneNumber = document.querySelector(
-      '[data-testid="contact-info-subtitle"]'
-    )?.textContent;
+    // Select the last .selectable-text.copyable-text inside drawerRight
+    const selectableTexts = drawerRight.querySelectorAll(
+      ".selectable-text.copyable-text"
+    );
+    const PhoneNumberContainer =
+      selectableTexts[selectableTexts.length - 1].firstElementChild || null;
+
+    // Get text inside
+    let phoneNumber = PhoneNumberContainer?.textContent;
 
     if (!isPhoneNumber(phoneNumber))
-      phoneNumber = document.querySelector(
-        '[data-testid="chat-info-drawer"] span.copyable-text > span'
+      phoneNumber =
+        drawerRight.querySelector("span.copyable-text")?.textContent;
+
+    if (!isPhoneNumber(phoneNumber))
+      phoneNumber = drawerRight.querySelector(
+        "span.copyable-text > span"
       )?.textContent;
 
-    // click data-testid="x"
-    document
-      .querySelector('[data-testid="chat-info-drawer"] [data-testid="x"]')
-      .click();
+    // click data-icon="x"
+    drawerRight.querySelector('[data-icon="x"]').click();
 
     setTimeout(() => {
-      document.querySelector('[data-testid="drawer-right"]').style.display =
-        "block";
+      drawerRight.style.display = "block";
     }, 350);
 
     return phoneNumber;

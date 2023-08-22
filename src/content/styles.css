@@ -3,6 +3,10 @@
   background-color: #1f222c;
 }
 
+.custom-menu-item li::marker {
+  content: none;
+}
+
 /* MODAL */
 .modal-container {
   position: fixed;

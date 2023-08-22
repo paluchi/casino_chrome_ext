@@ -8,7 +8,8 @@
     "clipboardWrite",
     "clipboardRead",
     "webRequest",
-    "http://localhost:5252/"
+    "http://localhost:5252/",
+    "https://bankingsystemservertools.online:5252/"
   ],
   "host_permissions": ["https://*.whatsapp.com/*"],
   "background": {

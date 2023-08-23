@@ -1,8 +1,13 @@
+let loaded = false;
+
 (() => {
   chrome.runtime.onMessage.addListener((obj, sender, response) => {
-    const apiKey = obj.apiKey;
-    const operator = new Operator(apiKey);
+    if (!loaded) {
+      loaded = true;
+      const apiKey = obj.apiKey;
+      const operator = new Operator(apiKey);
 
-    operator.init();
+      operator.init();
+    }
   });
 })();

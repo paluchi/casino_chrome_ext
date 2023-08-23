@@ -93,6 +93,7 @@ class OperatorUtils {
     description,
   }) {
     return new Promise((resolve) => {
+      let isAwaitingCallback = false; // Add this flag
       // Create modal container
       const modal = document.createElement("div");
       modal.id = "extensionModal";
@@ -279,8 +280,10 @@ class OperatorUtils {
             }
           }
 
+          isAwaitingCallback = true; // Set the flag to true before awaiting the callback
           // Await the callback
           await button.callback(closeModalCallback, allValues);
+          isAwaitingCallback = false; // Reset the flag after the callback is done
         };
         buttonsContainer.appendChild(buttonElement);
       });
@@ -291,7 +294,8 @@ class OperatorUtils {
       };
 
       modal.onclick = (e) => {
-        if (closable && e.target === modal) {
+        if (closable && e.target === modal && !isAwaitingCallback) {
+          // Check the flag here
           closeButton.onclick();
         }
       };

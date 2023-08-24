@@ -626,11 +626,16 @@ class Operator extends OperatorUtils {
   }
 
   async startControlPanelListener() {
+    // wait for menu bar chat to be loaded
     // duplicate element from menu bar chat
-    const menuBarChat = document.querySelector(
-      '[title="Nuevo chat"]'
-    ).parentElement;
-    if (!menuBarChat) return;
+    let menuBarChat;
+    while (true) {
+      menuBarChat = document.querySelector(
+        '[title="Nuevo chat"]'
+      )?.parentElement;
+      if (menuBarChat) break;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
 
     const controlPanel = menuBarChat.cloneNode(true);
     controlPanel.setAttribute("id", "control-panel");

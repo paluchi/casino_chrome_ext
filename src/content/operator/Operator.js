@@ -692,7 +692,10 @@ class Operator extends OperatorUtils {
 
     // Traverse up the DOM tree to check if the clicked element or any of its ancestors has role="listitem"
     while (target) {
-      if (target.getAttribute && target.getAttribute("title") === "Adjuntar") {
+      if (
+        (target.getAttribute && target.getAttribute("title") === "Adjuntar") ||
+        target.getAttribute("title") === "Attach"
+      ) {
         this.onAttachMenuClickCallback(target);
         return;
       }

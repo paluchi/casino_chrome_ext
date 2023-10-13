@@ -303,6 +303,71 @@
   opacity: 0.6;
 }
 
+/* CUSTOM INPUT */
+.input-btn-container {
+  position: relative;
+  width: max-content;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 16px;
+  min-width: 122px;
+}
+
+.send-btn,
+.custom-btn {
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  z-index: 2; /* Ensure button is above input */
+  border-radius: 5px;
+  min-width: 125px;
+}
+
+.send-btn:hover,
+.custom-btn:hover {
+  filter: brightness(90%); /* Darken the button slightly */
+}
+
+.custom-btn {
+  margin-top: 20px;
+}
+
+.input-field {
+  padding: 10px;
+  position: absolute; /* Positioning relative to container */
+  left: 0; /* Align to the left of the container */
+  z-index: 1; /* Ensure input is below button */
+  transition: all 0.15s ease-in-out; /* Smooth transition */
+  opacity: 0; /* Initially hidden */
+  border-radius: 5px;
+  outline: none;
+  border: none;
+}
+
+.input-btn-container:hover .input-field,
+.input-btn-container:focus-within .input-field {
+  opacity: 1; /* Show input on hover or focus within */
+  border-radius: 5px 0 0 5px;
+}
+
+.input-btn-container:hover .send-btn,
+.input-btn-container:focus-within .send-btn {
+  transform: translateX(170px); /* Move button to the right */
+  border-radius: 0 5px 5px 0;
+}
+
+.error-msg {
+  position: absolute;
+  display: block;
+  bottom: -18px;
+  left: 5px;
+  color: rgb(210, 0, 0);
+  font-size: 0.8em;
+}
+
 /* BLACK OVERLAY */
 .custom-overlay {
   position: fixed;
@@ -330,6 +395,171 @@
   font-size: 18px;
   max-width: 80%;
   margin-bottom: 20px;
+}
+
+/* USER DATA CONTAINER */
+#main > header {
+  transition: all 0.15s ease-in-out; /* adjust time and easing function as needed */
+  align-items: flex-start;
+  overflow: hidden;
+}
+
+#main > header:hover {
+  height: 350px;
+  border-radius: 0 0 20px 20px;
+}
+
+#main > header > .header-data {
+  display: flex;
+  width: 100%;
+}
+
+.left-elements {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 50%;
+}
+
+.left-elements .block-user-button {
+  background-color: #ff4757;
+}
+
+.left-elements .user-blocked {
+  background-color: #4caf50;
+}
+
+.client-data-container {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  height: 100%;
+  padding: 10px 0 10px 0;
+  border-radius: 5px;
+}
+
+.client-data-container .top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.client-data-container .client-data {
+  font-size: 20px;
+  margin: 2px 0;
+  width: fit-content;
+}
+
+.client-data-container .username,
+.client-data-container .balance {
+  font-weight: bold;
+  font-size: 24px;
+}
+
+.client-data-container .balance {
+  color: #4caf50; /* Green color, you can adjust as per your need */
+  position: relative;
+}
+
+.client-data-container .balance::before {
+  content: "$"; /* Currency prefix */
+  margin-right: 1px; /* Space between the prefix and the balance */
+  color: #4caf50; /* Same color as the balance, adjust if needed */
+}
+
+.client-movements {
+  display: block;
+  width: 50%;
+  height: 82%;
+  position: relative; /* To position the sync button absolutely within this container */
+  padding-left: 25px;
+}
+
+.movements-list {
+  width: 100%;
+  height: 100%;
+  list-style-type: none;
+  padding: 0;
+  overflow: auto;
+}
+
+.movements-list-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 80%;
+  list-style-type: none;
+  padding: 0;
+}
+
+.movements-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.movements-title {
+  margin: 0;
+  flex-grow: 1;
+  font-size: 1.5em;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.sync-icon-button,
+.load-history-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 24px;
+  margin: 0;
+}
+
+.load-history-button {
+  font-size: 16px;
+  font-weight: bold;
+  border: 2px solid white;
+}
+
+.sync-icon-button:hover {
+  filter: brightness(90%);
+}
+
+.operator-name,
+.action,
+.parameter,
+.date {
+  display: block; /* To make them appear one below the other */
+  margin-bottom: 5px;
+}
+
+.parameters {
+  padding-left: 10px; /* Optional: to add some indentation to the parameters */
+}
+
+.movement-item {
+  display: flex;
+  flex-direction: column;
+  margin: 10px 0 10px 0;
+}
+
+.movement-item span {
+  font-size: 12px;
+  margin-bottom: 4px;
+  margin-left: 4px;
+}
+
+.movement-item .date {
+  font-size: 14px;
+  font-weight: bold;
+  margin-left: 0;
+}
+
+.movement-item .parameters .parameter {
+  display: block;
 }
 
 /* LOADING SPINNER */
@@ -361,4 +591,19 @@
   100% {
     transform: rotate(360deg);
   }
+}
+
+/* COPYABLE EFFECT */
+.copyable {
+  cursor: copy;
+  transition: transform 0.05s ease-in-out;
+  display: inline-block; /* Ensure transform applies correctly */
+}
+
+.copyable:hover {
+  transform: scale(1.05); /* Enlarge the text a bit on hover */
+}
+
+.copyable:active {
+  transform: scale(0.95); /* Shrink a bit on click for a "press" effect */
 }

@@ -79,6 +79,7 @@ class OperatorUtils {
   apiKey = null;
   interfaceApiKey = "c74cccb9-74e6-421e-853a-4f00d00ecb8e";
   interfaceId = "648b787f9fcbd80a3a00af9f";
+  currentChatData = {};
 
   constructor(apiKey) {
     this.apiKey = apiKey;
@@ -337,10 +338,12 @@ class OperatorUtils {
     notification.appendChild(titleElement);
 
     // Add description
-    const descriptionElement = document.createElement("span");
-    descriptionElement.className = "notification-description";
-    descriptionElement.innerText = description;
-    notification.appendChild(descriptionElement);
+    if (description) {
+      const descriptionElement = document.createElement("span");
+      descriptionElement.className = "notification-description";
+      descriptionElement.innerText = description;
+      notification.appendChild(descriptionElement);
+    }
 
     // Add close button if closable
     const closeButton = document.createElement("span");
@@ -475,7 +478,6 @@ class OperatorUtils {
 
       return await res.json();
     } catch (error) {
-      console.log("error:", error);
       this.notify({
         title: "Error critico",
         description:
@@ -488,8 +490,8 @@ class OperatorUtils {
   }
 
   async serverFetch({
-    // baseUrl = "http://127.0.0.1:5252",
-    baseUrl = "https://bankingsystemservertools.online:5252",
+    baseUrl = "http://127.0.0.1:5252",
+    // baseUrl = "https://bankingsystemservertools.online:5252",
     path,
     method = "GET",
     params = {},
@@ -561,9 +563,17 @@ class OperatorUtils {
     return phoneNumber;
   }
 
-  async saveIntoClipboard(text) {
+  async saveIntoClipboard(text, notify = false) {
     try {
       await navigator.clipboard.writeText(text);
+
+      notify &&
+        this.notify({
+          title: "Copiado al portapapeles!",
+          lifespan: 500,
+          closable: false,
+          description: text,
+        });
     } catch (err) {
       console.error("Failed to write to clipboard: ", err);
     }
@@ -610,5 +620,435 @@ class OperatorUtils {
         resolve();
       });
     });
+  }
+
+  createInputButton({ title, callback, defaultValue = "", color = "#4caf50" }) {
+    const container = document.createElement("div");
+    container.className = "input-btn-container";
+
+    const button = document.createElement("button");
+    button.className = "send-btn";
+    button.innerText = title;
+    button.style.backgroundColor = color;
+
+    const input = document.createElement("input");
+    input.type = "search";
+    input.value = defaultValue;
+    input.className = "input-field";
+    input.autocomplete = "off";
+
+    const spinner = document.createElement("div");
+    spinner.className = "spinner";
+
+    const handleButtonClick = async () => {
+      button.appendChild(spinner);
+      button.disabled = true;
+      input.disabled = true;
+
+      const result = await callback(input.value);
+
+      button.disabled = false;
+      input.disabled = false;
+      spinner.remove();
+
+      if (typeof result === "string") {
+        this.notify({
+          title: result,
+          lifespan: 1000,
+          color: "#ff0000",
+        });
+        input.focus(); // Refocus the input if callback is not successful
+      } else {
+        input.value = ""; // Clear the input after successful callback
+        input.blur(); // Remove focus from the input
+      }
+    };
+
+    button.addEventListener("click", handleButtonClick);
+
+    button.addEventListener("mouseover", () => {
+      input.focus();
+    });
+
+    const handleEnterPress = (event) => {
+      if (event.key === "Enter") {
+        handleButtonClick();
+      }
+    };
+
+    input.addEventListener("focus", () => {
+      input.addEventListener("keyup", handleEnterPress);
+    });
+
+    input.addEventListener("blur", () => {
+      input.removeEventListener("keyup", handleEnterPress);
+    });
+
+    container.appendChild(button);
+    container.appendChild(input);
+
+    return container;
+  }
+
+  createButton({ title, callback, color, isDisabled = false, classes = [] }) {
+    const button = document.createElement("button");
+    button.className = "custom-btn " + classes.join(" "); // Apply a class for styling
+    button.innerText = title;
+    if (color) button.style.backgroundColor = color; // Apply color
+    button.disabled = isDisabled; // Set disabled state
+
+    const spinner = document.createElement("div");
+    spinner.className = "spinner";
+
+    button.addEventListener("click", async () => {
+      // Ensure the button is not disabled when clicked
+      if (!button.disabled) {
+        button.appendChild(spinner); // Show spinner
+        button.disabled = true; // Disable button
+
+        const result = await callback();
+
+        button.disabled = false; // Enable button
+        spinner.remove(); // Remove spinner
+
+        if (typeof result === "string") {
+          this.notify({
+            title: result,
+            lifespan: 1000,
+            color: "#ff0000",
+          });
+        }
+      }
+    });
+
+    return button;
+  }
+
+  async releaseCoins(balance, phoneNumber) {
+    try {
+      if (!phoneNumber) phoneNumber = await this.findPhoneNumber();
+      const res = await this.serverFetch({
+        method: "POST",
+        path: "operator/release_coins",
+        params: {
+          username: phoneNumber,
+          coinsAmount: balance,
+        },
+      });
+      if (!res.success) {
+        this.notify({
+          title: "Error enviando fichas",
+          color: "#ff6b6b",
+          description: res.error,
+        });
+        return false;
+      } else
+        this.notify({
+          title: "Fichas enviadas",
+          description: `Se enviaron ${balance} fichas al usuario asociado al telefono\n${phoneNumber}\n\n${res.data.message}`,
+          buttons: [
+            {
+              title: "Copiar mensaje",
+              callback: async (close, params) => {
+                await this.saveIntoClipboard(res.data.message);
+                close();
+              },
+            },
+          ],
+          lifespan: 15000,
+        });
+
+      // Update the current chat balance
+      this.updateCurrentChatBalance(balance);
+
+      if (!this.currentChatData.userFound) {
+        this.currentChatData.userFound = true;
+        const usernameElement = document.querySelector(".client-data.username");
+        usernameElement.innerText = res.data.username;
+      }
+
+      return true;
+    } catch (error) {
+      this.notify({
+        title: "Error enviando fichas",
+        color: "#ff6b6b",
+        description: "Por favor intente nuevamente.",
+      });
+      return false;
+    }
+  }
+
+  async subtractCoins(balance, phoneNumber) {
+    if (!phoneNumber) phoneNumber = await this.findPhoneNumber();
+    try {
+      const res = await this.serverFetch({
+        method: "POST",
+        path: "operator/subtract_coins",
+        params: {
+          username: phoneNumber,
+          coinsAmount: balance,
+        },
+      });
+      if (!res.success) {
+        this.notify({
+          title: "Error descargando fichas",
+          color: "#ff6b6b",
+          description: res.error,
+        });
+        return false;
+      } else
+        this.notify({
+          title: "Fichas descargadas",
+          description: `Se descargaron ${balance} fichas del usuario asociado al telefono\n${phoneNumber}\n\n${res.data.message}`,
+          buttons: [
+            {
+              title: "Copiar mensaje",
+              callback: async (close, params) => {
+                await this.saveIntoClipboard(res.data.message);
+                close();
+              },
+            },
+          ],
+          lifespan: 15000,
+        });
+
+      this.updateCurrentChatBalance(-balance);
+
+      return true;
+    } catch (error) {
+      this.notify({
+        title: "Error enviando fichas",
+        color: "#ff6b6b",
+        description: "Por favor intente nuevamente.",
+      });
+      return false;
+    }
+  }
+
+  updateCurrentChatBalance(balance) {
+    this.currentChatData.balance =
+      (this.currentChatData.balance || 0) + balance;
+    const balanceDiv = document.querySelector(".client-data.balance");
+    balanceDiv.innerText = `${this.currentChatData.balance}`;
+    this.pushCurrentChatMovement({
+      action: balance >= 0 ? "add" : "subtract",
+      parameters: { amount: Math.abs(balance) },
+    });
+  }
+
+  pushCurrentChatMovement(data) {
+    data.date = new Date();
+    data.operatorName = this.username;
+    if (!this.currentChatData.movements) this.currentChatData.movements = [];
+
+    this.currentChatData.movements.push(data);
+    this.displayMovements();
+  }
+
+  async displayMovements(movementsDiv) {
+    if (!movementsDiv)
+      movementsDiv = document.querySelector(".client-movements");
+
+    const movementsListContainer = movementsDiv.querySelector(
+      ".movements-list-container"
+    );
+
+    // Turn movements upside down
+    const movements = [...this.currentChatData.movements].reverse();
+
+    const actionsMap = {
+      create: "Creó usuario",
+      add: "Agregó fichas",
+      subtract: "Retiró fichas",
+      update_password: "Actualizó contraseña",
+      block_user: "Bloqueó usuario",
+      unblock_user: "Desbloqueó usuario",
+    };
+
+    // Create a new ul element
+    const ul = document.createElement("ul");
+    ul.className = "movements-list";
+
+    // Loop through the movements and create li elements
+    movements.forEach((movement) => {
+      const li = document.createElement("li");
+      li.className = "movement-item";
+
+      // Create elements for operatorName, action, parameters, and date
+      const operatorNameSpan = document.createElement("span");
+      operatorNameSpan.className = "operator-name";
+      operatorNameSpan.innerText = `Operator: ${movement.operatorName}`;
+
+      const actionSpan = document.createElement("span");
+      const formattedAction = actionsMap[movement.action] || movement.action;
+      actionSpan.className = "action";
+      actionSpan.innerText = `Accion: ${formattedAction}`;
+
+      function flattenObject(obj, prefix = "") {
+        return Object.keys(obj).reduce((acc, k) => {
+          const pre = prefix.length ? prefix + "_" : "";
+          if (typeof obj[k] === "object")
+            Object.assign(acc, flattenObject(obj[k], pre + k));
+          else acc[pre + k] = obj[k];
+          return acc;
+        }, {});
+      }
+
+      const parametersContainer = document.createElement("div");
+      parametersContainer.className = "parameters";
+
+      // Flatten the object and loop through each key-value pair
+      const flattenedParameters = movement.parameters
+        ? flattenObject(movement.parameters)
+        : {};
+      for (const [key, value] of Object.entries(flattenedParameters)) {
+        const parameterSpan = document.createElement("span");
+        parameterSpan.className = "parameter";
+        parameterSpan.innerText = `${key}: ${value}`;
+        parametersContainer.appendChild(parameterSpan);
+      }
+
+      const dateSpan = document.createElement("span");
+      dateSpan.className = "date";
+      dateSpan.innerText = `${new Date(movement.date).toLocaleString()}`;
+
+      // Append the elements to the li
+      li.appendChild(dateSpan);
+      li.appendChild(operatorNameSpan);
+      li.appendChild(actionSpan);
+      li.appendChild(parametersContainer);
+
+      // Append the li to the ul
+      ul.appendChild(li);
+    });
+
+    // Remove all existing children from movementsListContainer
+    while (movementsListContainer.firstChild) {
+      movementsListContainer.removeChild(movementsListContainer.firstChild);
+    }
+
+    // Append the new ul to movementsListContainer
+    movementsListContainer.appendChild(ul);
+  }
+
+  async updatePassword(newPassword, phoneNumber) {
+    if (!phoneNumber) phoneNumber = await this.findPhoneNumber();
+    try {
+      const res = await this.serverFetch({
+        method: "PATCH",
+        path: "operator/user_password",
+        params: {
+          username: phoneNumber,
+          password: newPassword,
+        },
+      });
+      if (!res.success) {
+        this.notify({
+          title: "Error Actualizando contraseña",
+          color: "#ff6b6b",
+          description: res.error,
+        });
+        return false;
+      } else
+        this.notify({
+          title: "Contraseña Actualizada",
+          description: `Se actualizo la contraseña del usuario asociado al telefono\n${phoneNumber}\n\n${res.data.friendlyMessage}`,
+          lifespan: 15000,
+          closable: true,
+          buttons: [
+            {
+              title: "Copiar mensaje",
+              callback: async (close, params) => {
+                await this.saveIntoClipboard(res.data.friendlyMessage);
+                close();
+              },
+            },
+          ],
+        });
+
+      // Add movement to movements list
+      this.pushCurrentChatMovement({
+        action: "update_password",
+        parameters: { password: newPassword },
+      });
+
+      return true;
+    } catch (error) {
+      this.notify({
+        title: "Error Actualizando contraseña",
+        color: "#ff6b6b",
+        description: "Por favor intente nuevamente.",
+      });
+      return false;
+    }
+  }
+
+  async toggleUserBlock(phoneNumber) {
+    if (!phoneNumber) phoneNumber = await this.findPhoneNumber();
+    try {
+      const res = this.currentChatData.isBlocked
+        ? await this.serverFetch({
+            method: "PATCH",
+            path: "operator/unblock_user",
+            params: {
+              username: phoneNumber,
+            },
+          })
+        : await this.serverFetch({
+            method: "PATCH",
+            path: "operator/block_user",
+            params: {
+              username: phoneNumber,
+            },
+          });
+
+      if (!res.success) {
+        this.notify({
+          title: `Error ${
+            this.currentChatData.isBlocked ? "desbloqueando" : "bloqueando"
+          } usuario`,
+          color: "#ff6b6b",
+          description: res.error,
+        });
+        return false;
+      } else
+        this.notify({
+          title: `Usuario ${
+            this.currentChatData.isBlocked ? "desbloqueado" : "bloqueado"
+          }`,
+          description: `Se ${
+            this.currentChatData.isBlocked ? "desbloqueo" : "bloqueo"
+          } al usuario asociado al telefono\n${phoneNumber}`,
+          lifespan: 2000,
+          closable: true,
+        });
+
+      // Update the currentChatData
+      this.currentChatData.isBlocked = !this.currentChatData.isBlocked;
+
+      // Update the button element
+      const blockButton = document.querySelector(".block-user-button");
+      blockButton.classList.toggle("user-blocked");
+      blockButton.innerText = this.currentChatData.isBlocked
+        ? "Desbloquear"
+        : "Bloquear";
+
+      // Add movement
+      this.pushCurrentChatMovement({
+        action: this.currentChatData.isBlocked ? "block_user" : "unblock_user",
+      });
+
+      return true;
+    } catch (error) {
+      console.log("error:", error);
+      this.notify({
+        title: `Error ${
+          this.currentChatData.isBlocked ? "desbloqueando" : "bloqueando"
+        } al usuario`,
+        color: "#ff6b6b",
+        description: "Por favor intente nuevamente.",
+      });
+      return false;
+    }
   }
 }

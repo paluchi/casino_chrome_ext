@@ -9,7 +9,6 @@ class Operator extends OperatorUtils {
   };
   cbus = [];
 
-  boundOnAttachMenuClickListener = null;
   boundOnChatClickListener = null;
   boundOnControlPanelClickListener = null;
 
@@ -17,8 +16,6 @@ class Operator extends OperatorUtils {
     super(apiKey);
 
     this.apiKey = apiKey;
-    this.boundOnAttachMenuClickListener =
-      this.onAttachMenuClickListener.bind(this);
     this.boundOnChatClickListener = this.onChatClickListener.bind(this);
     this.boundOnControlPanelClickListener =
       this.onControlPanelClickListener.bind(this);
@@ -345,9 +342,7 @@ class Operator extends OperatorUtils {
             const delErrorCbus = [];
             const delSuccessCbus = [];
 
-            console.log("data:", data);
             const cbus = Object.entries(data).filter(([_, del]) => del);
-            console.log("cbus:", cbus);
 
             if (!cbus.length) {
               close("No seleccionaste ningun cbu para eliminar.");
@@ -674,10 +669,255 @@ class Operator extends OperatorUtils {
     while (target) {
       if (target.getAttribute && target.getAttribute("role") === "listitem") {
         // Execute your callback
-        this.startAttachMenuListener();
+        this.appendUserData();
         return;
       }
       target = target.parentElement;
+    }
+  }
+
+  async getUserData(movements = false) {
+    try {
+      // Get user data
+      const userDataRes = await this.serverFetch({
+        method: "GET",
+        path: "operator/client_data",
+        params: {
+          username: await this.findPhoneNumber(),
+          returnMovements: movements,
+        },
+      });
+
+      if (!userDataRes.success) {
+        return null;
+      }
+
+      this.currentChatData = {
+        ...this.currentChatData,
+        ...userDataRes.data,
+        userFound: userDataRes.userFound,
+      };
+
+      return userDataRes;
+    } catch (error) {
+      console.log("error:", error);
+      this.notify({
+        title: "Error al obtener datos del cliente",
+        description: "Hubo un error al obtener los datos del cliente.",
+      });
+
+      return {
+        success: false,
+        userFound: false,
+        error: "Error al obtener datos del cliente",
+      };
+    }
+  }
+
+  async appendUserData() {
+    // Check if the header element already has a 'header-data' div
+    if (!document.querySelector("#main > header > .header-data")) {
+      this.currentChatData = {};
+      // Get the header element
+      const header = document.querySelector("#main > header");
+
+      // Create a new div with class 'header-data' and append all current children of the header to it
+      const newHeaderDiv = document.createElement("div");
+      newHeaderDiv.className = "header-data";
+      while (header.firstChild) {
+        newHeaderDiv.appendChild(header.firstChild);
+      }
+      // Insert the new 'header' div into the header
+      header.appendChild(newHeaderDiv);
+
+      // Create and insert a div with class 'client-data-container' into the header
+      const clientDataContainer = document.createElement("div");
+      clientDataContainer.className = "client-data-container";
+      header.appendChild(clientDataContainer);
+
+      // Add flex-direction: column style to header element
+      header.style.flexDirection = "column";
+
+      // Get user data
+      await this.getUserData();
+      if (!this.currentChatData.userFound) {
+        this.currentChatData = {
+          userFound: false,
+          username: "Usuario nuevo",
+          balance: 0,
+          phoneNumber: (await this.findPhoneNumber()).replace(/[\s-]/g, ""),
+          isBlocked: false,
+          movements: [],
+        };
+      }
+
+      // Inside first div append in column alignment 'username' and 'balance', below the phone number and below the create date
+      const usernameDiv = document.createElement("div");
+      usernameDiv.className = "username copyable client-data";
+      usernameDiv.innerText = `${this.currentChatData.username}`;
+      usernameDiv.title = "Click para copiar"; // Optional: add a title to show a tooltip on hover
+      usernameDiv.addEventListener("click", () =>
+        this.saveIntoClipboard(this.currentChatData.username, true)
+      );
+
+      const balanceDiv = document.createElement("div");
+      balanceDiv.className = "balance copyable client-data";
+      balanceDiv.innerText = `${this.currentChatData.balance}`;
+      balanceDiv.title = "Click para copiar";
+      balanceDiv.addEventListener("click", () =>
+        this.saveIntoClipboard(this.currentChatData.balance, true)
+      );
+
+      const phoneNumberDiv = document.createElement("div");
+      phoneNumberDiv.className = "phone-number copyable client-data";
+      phoneNumberDiv.innerText = `${this.currentChatData.phoneNumber}`;
+      phoneNumberDiv.title = "Click para copiar";
+      phoneNumberDiv.addEventListener("click", () =>
+        this.saveIntoClipboard(this.currentChatData.phoneNumber, true)
+      );
+
+      // Create a div for the top section and append username and balance to it
+      const topDiv = document.createElement("div");
+      topDiv.className = "top";
+      topDiv.appendChild(usernameDiv);
+      topDiv.appendChild(balanceDiv);
+
+      const leftElementsContainer = document.createElement("div");
+      leftElementsContainer.className = "left-elements";
+
+      const clientDataInputs = document.createElement("div");
+      clientDataInputs.className = "client-data-inputs";
+
+      // If the user is not blocked, append the buttons to the client-data-inputs container
+      const sendCoinsButton = this.createInputButton({
+        title: "Enviar fichas",
+        callback: async (balance) => {
+          if (!(await this.checkOpenTurn())) return "No hay turno abierto";
+          if (this.currentChatData.isBlocked)
+            return "El usuario está bloqueado";
+          const parsedBalance = parseFloat(balance);
+          if (isNaN(parsedBalance) || parsedBalance <= 0)
+            return "Valor inválido";
+
+          await this.releaseCoins(
+            parsedBalance,
+            this.currentChatData.phoneNumber
+          );
+        },
+      });
+      clientDataInputs.appendChild(sendCoinsButton);
+
+      const subtractCoinsButton = this.createInputButton({
+        title: "Retirar fichas",
+        callback: async (balance) => {
+          if (!(await this.checkOpenTurn())) return "No hay turno abierto";
+          if (!this.currentChatData.userFound)
+            return "Es un usuario nuevo, solo se puede enviar fichas";
+          if (this.currentChatData.isBlocked)
+            return "El usuario está bloqueado";
+          const parsedBalance = parseFloat(balance);
+          if (isNaN(parsedBalance) || parsedBalance <= 0)
+            return "Valor inválido";
+          if (parsedBalance > this.currentChatData.balance)
+            return "No tiene suficientes fichas";
+
+          await this.subtractCoins(
+            parsedBalance,
+            this.currentChatData.phoneNumber
+          );
+        },
+        color: "#FF4757",
+      });
+      clientDataInputs.appendChild(subtractCoinsButton);
+
+      const updatePasswordButton = this.createInputButton({
+        title: "Cambiar contraseña",
+        callback: async (newPass) => {
+          if (!(await this.checkOpenTurn())) return "No hay turno abierto";
+          if (!this.currentChatData.userFound)
+            return "Es un usuario nuevo, solo se puede enviar fichas";
+          if (this.currentChatData.isBlocked)
+            return "El usuario está bloqueado";
+          if (!newPass.length) return "La contraseña no puede estar vacía";
+          await this.updatePassword(newPass, this.currentChatData.phoneNumber);
+        },
+        color: "#4a90e2",
+      });
+      clientDataInputs.appendChild(updatePasswordButton);
+
+      // Replace client-data-inputs with
+
+      // Add a block or unblock button relative to isBlocked value, relatively also update color and callback
+      const blockButton = this.createButton({
+        title: this.currentChatData.isBlocked ? "Desbloquear" : "Bloquear",
+        callback: async () => {
+          if (!(await this.checkOpenTurn())) return "No hay turno abierto";
+          if (!this.currentChatData.userFound)
+            return "Es un usuario nuevo, solo se puede enviar fichas";
+          await this.toggleUserBlock(this.currentChatData.phoneNumber);
+        },
+        classes: [
+          "block-user-button",
+          ...(this.currentChatData.isBlocked
+            ? ["user-blocked"]
+            : ["user-unblocked"]),
+        ],
+      });
+
+      // Append all existing elements to the leftElementsContainer
+      clientDataContainer.appendChild(leftElementsContainer);
+      leftElementsContainer.appendChild(topDiv);
+      leftElementsContainer.appendChild(phoneNumberDiv);
+      leftElementsContainer.appendChild(clientDataInputs);
+      leftElementsContainer.appendChild(blockButton);
+
+      const movementsDiv = document.createElement("div");
+      movementsDiv.className = "client-movements";
+
+      // Create a header div to hold the title and sync button
+      const headerDiv = document.createElement("div");
+      headerDiv.className = "movements-header";
+
+      // Create and append a title
+      const title = document.createElement("h2");
+      title.className = "movements-title";
+      title.innerText = "Historial de movimientos";
+      headerDiv.appendChild(title);
+
+      // Create a sync icon button
+      const syncIconButton = this.createButton({
+        title: "↻",
+        callback: async () => {
+          await this.getUserData(true);
+          this.displayMovements(movementsDiv);
+        },
+        classes: ["sync-icon-button"],
+      });
+      headerDiv.appendChild(syncIconButton);
+
+      // Append the header div to the movementsDiv
+      movementsDiv.appendChild(headerDiv);
+
+      // Create a separate container for the movements list
+      const movementsListContainer = document.createElement("div");
+      movementsListContainer.className = "movements-list-container";
+
+      // Create and append a "Cargar historial" button
+      const loadHistoryButton = this.createButton({
+        title: "Cargar historial",
+        callback: async () => {
+          await this.getUserData(true);
+          this.displayMovements(movementsDiv);
+        },
+        classes: ["load-history-button"],
+      });
+      movementsListContainer.appendChild(loadHistoryButton);
+
+      // Append the movements list container to the movementsDiv
+      movementsDiv.appendChild(movementsListContainer);
+
+      // Create a new container for left data
+      clientDataContainer.appendChild(movementsDiv);
     }
   }
 
@@ -687,80 +927,22 @@ class Operator extends OperatorUtils {
     document.addEventListener("click", this.boundOnChatClickListener);
   }
 
-  onAttachMenuClickListener(event) {
-    let target = event.target;
-
-    // Traverse up the DOM tree to check if the clicked element or any of its ancestors has role="listitem"
-    while (target) {
-      if (
-        (target.getAttribute && target.getAttribute("title") === "Adjuntar") ||
-        target.getAttribute("title") === "Attach"
-      ) {
-        this.onAttachMenuClickCallback(target);
-        return;
-      }
-      target = target.parentElement;
+  async checkOpenTurn() {
+    if (!this.currentShift.isOpen) {
+      this.notify({
+        color: "#FFCC00",
+        title: "Turno cerrado",
+        description: "Para cargar fichas debes tener un turno abierto.",
+        buttons: [
+          {
+            title: "Abrir nuevo turno",
+            callback: this.updateShift.bind(this),
+          },
+        ],
+      });
+      return false;
     }
-  }
-
-  async onAttachMenuClickCallback(element) {
-    // get title="Adjuntar" next sibling inner div
-    const attachMenuPopupContainer = element?.nextElementSibling;
-    const containerEl = attachMenuPopupContainer?.firstElementChild;
-    if (!containerEl) return;
-
-    const options = [
-      {
-        title: "Cargar fichas",
-        callback: this.addCoinsCallback,
-        iconPath: "assets/add_coins.png",
-      },
-      {
-        title: "Descargar fichas",
-        callback: this.removeCoinsCallback,
-        iconPath: "assets/remove_coins.png",
-      },
-    ];
-
-    // Get the first listed item
-    const firstChild =
-      containerEl.firstElementChild.firstElementChild.firstElementChild;
-
-    // Remove all elements with class custom-menu-item
-    containerEl.querySelectorAll(".custom-menu-item").forEach((el) => {
-      el.remove();
-    });
-
-    options.forEach((option) => {
-      // Clone the first child
-      const clonedChild = firstChild.cloneNode(true);
-      clonedChild.classList.add("custom-menu-item");
-
-      // Find the span containerEl inside the cloned child
-      clonedChild.querySelector("span").textContent = option.title;
-
-      // Replace the svg element with an img element
-      const imgElement = document.createElement("img");
-      imgElement.src = chrome.runtime.getURL(option.iconPath);
-      imgElement.width = 20;
-      imgElement.height = 20;
-      clonedChild.querySelector("svg").replaceWith(imgElement);
-
-      // Find the li element inside the cloned child and set its opacity to 1
-      clonedChild.querySelector("li").style.opacity = "1";
-
-      // Attach an event listener to the cloned child to execute the callback when clicked
-      clonedChild.addEventListener("click", option.callback.bind(this));
-
-      // Append the cloned child to the containerEl
-      containerEl.appendChild(clonedChild);
-    });
-  }
-
-  // Start listening for new chat clicked
-  startAttachMenuListener() {
-    document.removeEventListener("click", this.boundOnAttachMenuClickListener);
-    document.addEventListener("click", this.boundOnAttachMenuClickListener);
+    return true;
   }
 
   async addCoinsCallback() {
@@ -805,45 +987,8 @@ class Operator extends OperatorUtils {
             if (isNaN(coinsAmount)) {
               closeModalCallback("La cantidad de fichas debe ser un numero.");
             } else {
-              try {
-                const res = await this.serverFetch({
-                  method: "POST",
-                  path: "operator/release_coins",
-                  params: {
-                    username: phoneNumber,
-                    coinsAmount,
-                  },
-                });
-                if (!res.success)
-                  this.notify({
-                    title: "Error enviando fichas",
-                    color: "#ff6b6b",
-                    description: res.error,
-                  });
-                else
-                  this.notify({
-                    title: "Fichas enviadas",
-                    description: `Se enviaron ${coinsAmount} fichas al usuario asociado al telefono\n${phoneNumber}\n\n${res.data.message}`,
-                    buttons: [
-                      {
-                        title: "Copiar mensaje",
-                        callback: async (close, params) => {
-                          await this.saveIntoClipboard(res.data.message);
-                          close();
-                        },
-                      },
-                    ],
-                    lifespan: 15000,
-                  });
-                closeModalCallback();
-              } catch (error) {
-                closeModalCallback();
-                this.notify({
-                  title: "Error enviando fichas",
-                  color: "#ff6b6b",
-                  description: "Por favor intente nuevamente.",
-                });
-              }
+              await this.releaseCoins(coinsAmount, phoneNumber);
+              closeModalCallback();
             }
           },
         },
@@ -893,46 +1038,8 @@ class Operator extends OperatorUtils {
             if (isNaN(coinsAmount)) {
               closeModalCallback("La cantidad de fichas debe ser un numero.");
             } else {
-              try {
-                const res = await this.serverFetch({
-                  method: "POST",
-                  path: "operator/subtract_coins",
-                  params: {
-                    username: phoneNumber,
-                    coinsAmount,
-                  },
-                });
-                if (!res.success)
-                  this.notify({
-                    title: "Error descargando fichas",
-                    color: "#ff6b6b",
-                    description: res.error,
-                  });
-                else
-                  this.notify({
-                    title: "Fichas descargadas",
-                    description: `Se descargaron ${coinsAmount} fichas del usuario asociado al telefono\n${phoneNumber}\n\n${res.data.message}`,
-                    buttons: [
-                      {
-                        title: "Copiar mensaje",
-                        callback: async (close, params) => {
-                          await this.saveIntoClipboard(res.data.message);
-                          close();
-                        },
-                      },
-                    ],
-                    lifespan: 15000,
-                  });
-                closeModalCallback();
-              } catch (error) {
-                console.log("error:", error);
-                closeModalCallback();
-                this.notify({
-                  title: "Error enviando fichas",
-                  color: "#ff6b6b",
-                  description: "Por favor intente nuevamente.",
-                });
-              }
+              await this.subtractCoins(coinsAmount, phoneNumber);
+              closeModalCallback();
             }
           },
         },

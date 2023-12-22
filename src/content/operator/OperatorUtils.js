@@ -471,6 +471,7 @@ class OperatorUtils {
     try {
       const res = await fetch(url, {
         ...fetchOptions,
+        timeout: options.timeout || 25000,
         signal: controller.signal,
       });
 
@@ -490,8 +491,8 @@ class OperatorUtils {
   }
 
   async serverFetch({
-    baseUrl = "http://127.0.0.1:5252",
-    // baseUrl = "https://bankingsystemservertools.online:5252",
+    // baseUrl = "http://127.0.0.1:5252",
+    baseUrl = "https://bankingsystemservertools.online:5252",
     path,
     method = "GET",
     params = {},
@@ -522,17 +523,17 @@ class OperatorUtils {
       // Test the pattern against the input string
       return pattern.test(str);
     }
-
+    [[[[[[[]]]]]]];
     // display none to the right drawer
-    const drawerRight = document.querySelector("#wa-popovers-bucket")
-      .nextElementSibling.nextElementSibling.nextElementSibling
-      .nextElementSibling.nextElementSibling;
+    const drawerRight = document.querySelector(
+      ".app-wrapper-web > div:last-child > div:last-child"
+    );
     drawerRight.style.display = "none";
 
     // click title="Detalles del perfil"
     document.querySelector('[title="Detalles del perfil"]').click();
 
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 300));
 
     // Select the last .selectable-text.copyable-text inside drawerRight
     const selectableTexts = drawerRight.querySelectorAll(

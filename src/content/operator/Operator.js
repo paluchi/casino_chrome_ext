@@ -799,10 +799,7 @@ class Operator extends OperatorUtils {
           if (isNaN(parsedBalance) || parsedBalance <= 0)
             return "Valor inválido";
 
-          await this.releaseCoins(
-            parsedBalance,
-            this.currentChatData.phoneNumber
-          );
+          await this.releaseCoins(parsedBalance);
         },
       });
       clientDataInputs.appendChild(sendCoinsButton);
@@ -821,10 +818,7 @@ class Operator extends OperatorUtils {
           if (parsedBalance > this.currentChatData.balance)
             return "No tiene suficientes fichas";
 
-          await this.subtractCoins(
-            parsedBalance,
-            this.currentChatData.phoneNumber
-          );
+          await this.subtractCoins(parsedBalance);
         },
         color: "#FF4757",
       });
